@@ -1,6 +1,7 @@
 const teacherTable = require('../database/teacherTable.js');
 const studentTable = require('../database/studentTable.js');
-const relationshipTable = require('../database/relationshipTable.js')
+const relationshipTable = require('../database/relationshipTable.js');
+const HTTP400Error = require('../exceptions/badRequest.js')
 
 
 const registerStudent = async (body) => {
@@ -11,12 +12,15 @@ const registerStudent = async (body) => {
 
     const teacherExists = await teacherTable.checkTeacherExists(teacher);
     if (!teacherExists) {
-        // return res.status(400).json({ error: 'Teacher not found' });
-        throw new Error(`Teacher ${teacher} not found`);
+        throw new HTTP400Error(`Teacher ${teacher} not found in db`);
     }
 
-    console.log(teacher);
-    console.log(students);
+    // Check if relationship exist between any student before registering
+    const registeredStudentFound = await relationshipTable.checkRelationshipExists(teacher, students);
+    if (registeredStudentFound.length > 0) {
+        let studentString = registeredStudentFound.map(obj => obj.student_email).join(', ');
+        throw new HTTP400Error(`Student already registered: ${studentString}`);
+    }
 
     // Register students
     for (const studentEmail of students) {
@@ -24,7 +28,7 @@ const registerStudent = async (body) => {
         const studentExists = await studentTable.checkStudentExists(studentEmail);
 
         if (!studentExists) {
-            // If the student doesn't exist, insert them into the "students" table
+            // If the student doesn't exist, insert them into the "student" table
             const newStudent = await studentTable.insertNewStudent(studentEmail);
             console.log(`Inserted new student: ${newStudent}`);
         }
