@@ -39,6 +39,15 @@ const registerStudent = async (body) => {
 
 }
 
+const findCommonStudents = async (teacherEmails) => {
+    let results = await relationshipTable.findCommonStudentsRelationship(teacherEmails);
+    console.log(results);
+    // Extract student emails from the query results
+    const commonStudents = results.map((result) => result.student_email);
+    return commonStudents;
+}
+
 module.exports = {
-    registerStudent
+    registerStudent,
+    findCommonStudents
 };

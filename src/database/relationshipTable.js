@@ -29,7 +29,27 @@ function checkRelationshipExists(teacherEmail, studentList) {
   });
 }
 
+function findCommonStudentsRelationship (teacherEmails) {
+  return new Promise((resolve, reject) => {
+    const query = `
+      SELECT student_email
+      FROM teacher_student_rs
+      WHERE teacher_email IN (?)
+      GROUP BY student_email
+      HAVING COUNT(DISTINCT teacher_email) = ?
+    `;
+
+    db.query(query, [teacherEmails, teacherEmails.length], (error, results) => {
+      if (error) {
+        throw HTTP500Error("QUERY ERROR: findCommonStudentsRelationship");
+      }
+      resolve(results); 
+    });
+  });
+}
+
 module.exports = {
     registerStudentTeacherRelationship,
-    checkRelationshipExists
+    checkRelationshipExists,
+    findCommonStudentsRelationship
 };
