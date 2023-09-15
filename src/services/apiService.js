@@ -10,10 +10,16 @@ const registerStudent = async (body) => {
         const { teacher, students } = body;
 
         // Check if the teacher exists in the database
-    
         const teacherExists = await teacherTable.checkTeacherExists(teacher);
         if (!teacherExists) {
-            throw new HTTP400Error(`Teacher ${teacher} not found in db`);
+            throw new HTTP400Error(`Teacher ${teacher} does not exist`);
+        }
+
+        // Check student email format
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+        const invalidEmails = students.filter(stu => !emailRegex.test(stu));
+        if (invalidEmails.length > 0){
+            throw new HTTP400Error(`Invalid student email: ${invalidEmails}`);
         }
     
         // Check if relationship exist between any student before registering
@@ -25,6 +31,7 @@ const registerStudent = async (body) => {
     
         // Register students
         for (const studentEmail of students) {
+
             // Check if the student exists
             const studentExists = await studentTable.checkStudentExists(studentEmail);
     
@@ -37,10 +44,8 @@ const registerStudent = async (body) => {
             await relationshipTable.registerStudentTeacherRelationship(teacher, studentEmail);
         }
     } catch (error) {
-        console.log(error);
         throw error;
     }
-
 
 }
 
@@ -51,7 +56,7 @@ const findCommonStudents = async (teacherEmails) => {
         const commonStudents = results.map((result) => result.student_email);
         return commonStudents;
     } catch (error) {
-        throw new HTTP500Error("QUERY ERROR: findCommonStudents");
+        throw error;
     }
 
 }
@@ -60,13 +65,19 @@ const suspendStudent = async (studentEmail) => {
     try {
         await studentTable.suspendStudent(studentEmail);
     } catch (error) {
-        throw new HTTP500Error("QUERY ERROR: suspendStudent");
+        throw error;
     }
 }
 
 const retrieveRecipientsForNotifications = async (body) => {
     try {
         const { teacher, notification } = body;
+
+        // Check if the teacher exists in the database
+        const teacherExists = await teacherTable.checkTeacherExists(teacher);
+        if (!teacherExists) {
+            throw new HTTP400Error(`Teacher ${teacher} does not exist`);
+        }
 
         //Retrieve mentioned student
         const mentionRegex = /@[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}/g;
@@ -79,32 +90,13 @@ const retrieveRecipientsForNotifications = async (body) => {
         }else{
             cleanedStudents = []
         }
-        
-        //check if mentioned student exist
-        // if(cleanedStudents.length > 0){
-        //     let studentNotFound = [];
-        //     for (student of cleanedStudents){
-        //         const studentExists = await studentTable.checkStudentExists(student);
-        //         console.log(`studentExists ${studentExists}`);
-        //         if (!studentExists){
-        //             studentNotFound.push(student);
-        //         }
-        //     }
 
-        //     console.log(`studentNotFound ${studentNotFound}`);
-
-        //     if (studentNotFound.length > 0){
-        //         let studentString = studentNotFound.join(', ');
-        //         throw new HTTP400Error(`Student not existing: ${studentString}`);
-        //     }
-        // }
-
+        //Get receipients for notification
         const studentsList = await studentTable.getReceipientFromDb(teacher, cleanedStudents);
         const commonStudents = studentsList.map((result) => result.email);
         return commonStudents
 
     } catch (error) {
-        console.log(error);
         throw error;
     }
 }

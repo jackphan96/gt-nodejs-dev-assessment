@@ -7,7 +7,7 @@ const checkStudentExists = (studentEmail) => {
     const query = 'SELECT COUNT(*) as count FROM student WHERE email = ?';
     db.query(query, [studentEmail], (error, results) => {
       if (error) {
-        return reject(error)
+        return reject(new HTTP500Error("Query error"))
       }
       const count = results[0].count;
       resolve(count > 0); 
@@ -21,7 +21,7 @@ function insertNewStudent(studentEmail) {
     const query = 'INSERT INTO student (email, is_suspended) VALUES (?, ?)';
     db.query(query, [studentEmail, 0], (error, results) => {
       if (error) {
-        return reject(error)
+        return reject(new HTTP500Error("Query error"))
       }
       resolve(results.email);
     });
@@ -34,7 +34,7 @@ function suspendStudent(studentEmail){
 
     db.query(query, [studentEmail], (error, results) => {
       if (error) {
-        return reject(error)
+        return reject(new HTTP500Error("Query error"))
       } else {
         resolve();
       }
@@ -81,7 +81,6 @@ function getReceipientFromDb(teacher, cleanedStudents){
 
     db.query(query, queryParams, (error, results) => {
       if (error) {
-        console.log(error);
         return reject(new HTTP500Error("Query error"))
       }else {
         resolve(results);
