@@ -6,7 +6,7 @@ const checkTeacherExists = (teacherEmail) => {
         const query = 'SELECT COUNT(*) as count FROM teacher WHERE email = ?';
         db.query(query, [teacherEmail], (error, results) => {
           if (error) {
-            throw HTTP500Error("QUERY ERROR: checkTeacherExists");
+            return reject(error)
         }
           const count = results[0].count;
           resolve(count > 0);

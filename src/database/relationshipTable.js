@@ -6,7 +6,7 @@ function registerStudentTeacherRelationship(teacherEmail, studentEmail) {
       const query = 'INSERT INTO teacher_student_rs (teacher_email, student_email) VALUES (?, ?)';
       db.query(query, [teacherEmail, studentEmail], (error, results) => {
         if (error) {
-          throw HTTP500Error("QUERY ERROR: registerStudentTeacherRelationship");
+          return reject(error)
         }
         resolve(results);
       });
@@ -22,7 +22,7 @@ function checkRelationshipExists(teacherEmail, studentList) {
     `;
     db.query(query, [teacherEmail, studentList], (error, results) => {
       if (error) {
-        throw HTTP500Error("QUERY ERROR: checkRelationshipExists");
+        return reject(error)
       }
       resolve(results); 
     });
@@ -41,7 +41,7 @@ function findCommonStudentsRelationship (teacherEmails) {
 
     db.query(query, [teacherEmails, teacherEmails.length], (error, results) => {
       if (error) {
-        throw HTTP500Error("QUERY ERROR: findCommonStudentsRelationship");
+        return reject(error)
       }
       resolve(results); 
     });

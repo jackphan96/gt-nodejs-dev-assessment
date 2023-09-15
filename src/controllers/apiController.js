@@ -27,7 +27,7 @@ exports.register = async (req, res, next) => {
   
     // Call service
     await service.registerStudent(req.body);
-    res.status(200).send('Register success!');
+    res.status(200).send();
 
   }catch (error) {
     res.status(error?.statusCode || 500)
@@ -68,7 +68,16 @@ exports.commonstudents = async (req, res, next) => {
 // API 3- As a teacher, I want to suspend a specified student.
 exports.suspend = async (req, res, next) => {
   try {
-    
+    // check empty
+    if (!req.body.student) {
+      return res.status(400).json({ error: 'Missing student email in the request body' });
+    }
+
+    let studentEmail = req.body.student;
+    await service.suspendStudent(studentEmail);
+
+    res.status(200).send();
+
   } catch (error) {
     res.status(error?.statusCode || 500)
       .send({ message: error?.name || error });
