@@ -64,8 +64,54 @@ const suspendStudent = async (studentEmail) => {
     }
 }
 
+const retrieveRecipientsForNotifications = async (body) => {
+    try {
+        const { teacher, notification } = body;
+
+        //Retrieve mentioned student
+        const mentionRegex = /@[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}/g;
+        const mentionedStudents = notification.match(mentionRegex);
+
+        //clean student list - remove '@'
+        let cleanedStudents;
+        if (mentionedStudents) {
+            cleanedStudents = mentionedStudents.map((student) => student.replace('@', ''));
+        }else{
+            cleanedStudents = []
+        }
+        
+        //check if mentioned student exist
+        // if(cleanedStudents.length > 0){
+        //     let studentNotFound = [];
+        //     for (student of cleanedStudents){
+        //         const studentExists = await studentTable.checkStudentExists(student);
+        //         console.log(`studentExists ${studentExists}`);
+        //         if (!studentExists){
+        //             studentNotFound.push(student);
+        //         }
+        //     }
+
+        //     console.log(`studentNotFound ${studentNotFound}`);
+
+        //     if (studentNotFound.length > 0){
+        //         let studentString = studentNotFound.join(', ');
+        //         throw new HTTP400Error(`Student not existing: ${studentString}`);
+        //     }
+        // }
+
+        const studentsList = await studentTable.getReceipientFromDb(teacher, cleanedStudents);
+        const commonStudents = studentsList.map((result) => result.email);
+        return commonStudents
+
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}
+
 module.exports = {
     registerStudent,
     findCommonStudents,
-    suspendStudent
+    suspendStudent,
+    retrieveRecipientsForNotifications
 };

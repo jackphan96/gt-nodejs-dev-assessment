@@ -30,18 +30,63 @@ function insertNewStudent(studentEmail) {
   
 function suspendStudent(studentEmail){
   return new Promise((resolve, reject) => {
-    console.log(studentEmail);
-
     const query = 'UPDATE student SET is_suspended = 1 WHERE email = (?)';
 
     db.query(query, [studentEmail], (error, results) => {
       if (error) {
         return reject(error)
       } else {
-        console.log(results);
         resolve();
       }
     });
+  });
+}
+
+function getReceipientFromDb(teacher, cleanedStudents){
+  return new Promise((resolve, reject) => {
+    let query;
+    let queryParams = [teacher];
+
+    if (cleanedStudents.length == 0){
+      query = `
+        SELECT DISTINCT s.email
+        FROM student s
+        WHERE s.is_suspended = 0
+        AND s.email IN (
+          SELECT tsr.student_email
+          FROM teacher_student_rs tsr
+          WHERE tsr.teacher_email = (?)
+        )`;
+    } else {
+      query = `
+        SELECT DISTINCT s.email
+        FROM student s
+        WHERE s.is_suspended = 0
+        AND (
+          s.email IN (?)
+          OR
+          s.email IN (
+            SELECT tsr.student_email
+            FROM teacher_student_rs tsr
+            WHERE tsr.teacher_email = (?)
+          )
+        )
+      `;
+      
+      queryParams.unshift(cleanedStudents);
+
+    }
+
+    // Add cleanedStudents to the query parameters
+
+    db.query(query, queryParams, (error, results) => {
+      if (error) {
+        console.log(error);
+        return reject(new HTTP500Error("Query error"))
+      }else {
+        resolve(results);
+      }
+    })
   });
 }
 
@@ -49,5 +94,6 @@ function suspendStudent(studentEmail){
 module.exports = {
     checkStudentExists,
     insertNewStudent,
-    suspendStudent
+    suspendStudent,
+    getReceipientFromDb
 };

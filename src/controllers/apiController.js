@@ -1,6 +1,6 @@
 const service = require("../services/apiService.js");
 
-
+//API 1
 exports.register = async (req, res, next) => {
   try{
     // Handle empty list
@@ -36,8 +36,8 @@ exports.register = async (req, res, next) => {
 
 };
 
-// API 2 - As a teacher, I want to retrieve a list of students common to a given list of teachers (i.e. retrieve students who are registered to ALL of the given teachers).
-exports.commonstudents = async (req, res, next) => {
+// API 2
+exports.commonStudents = async (req, res, next) => {
   try {
     // Assign single value into list
     const teacherEmails = Array.isArray(req.query.teacher)
@@ -65,7 +65,7 @@ exports.commonstudents = async (req, res, next) => {
   }
 }
 
-// API 3- As a teacher, I want to suspend a specified student.
+// API 3
 exports.suspend = async (req, res, next) => {
   try {
     // check empty
@@ -84,10 +84,16 @@ exports.suspend = async (req, res, next) => {
   }
 }
 
-// API 4 - As a teacher, I want to retrieve a list of students who can receive a given notification.
-exports.retrievefornotifications = async (req, res, next) => {
+// API 4
+exports.retrieveForNotifications = async (req, res, next) => {
   try {
-    
+    if (!req.body.teacher || !req.body.notification){
+      return res.status(400).json({ error: 'Missing teacher or notification in the request body' });
+    }
+
+    const studentsList = await service.retrieveRecipientsForNotifications(req.body);
+
+    res.status(200).send({receipients: studentsList});
   } catch (error) {
     res.status(error?.statusCode || 500)
       .send({ message: error?.name || error });

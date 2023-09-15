@@ -5,9 +5,9 @@ const controller = require('../controllers/apiController')
 
 /* METHODS */
 router.post('/register', controller.register);
-router.get('/commonstudents', controller.commonstudents);
+router.get('/commonstudents', controller.commonStudents);
 router.post('/suspend', controller.suspend);
-router.post('/retrievefornotifications', controller.retrievefornotifications);
+router.post('/retrievefornotifications', controller.retrieveForNotifications);
 
 
 module.exports = router;
