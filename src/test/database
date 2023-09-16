@@ -1,0 +1,22 @@
+const db = require('../models/db'); // Import your database module
+
+describe('Database Layer', () => {
+  it('should execute a database query', async () => {
+    // Mock database query function
+    const queryMock = jest.fn((sql, values, callback) => {
+      // Simulate a successful query result
+      callback(null, [{ id: 1, name: 'John' }]);
+    });
+    db.query = queryMock;
+
+    // Call the database function that uses the query
+    const result = await yourDatabaseFunction();
+
+    // Assertions
+    expect(result).toEqual([{ id: 1, name: 'John' }]);
+    expect(queryMock).toHaveBeenCalled();
+    // Add more assertions as needed
+  });
+
+  // Add more test cases for other database interactions
+});

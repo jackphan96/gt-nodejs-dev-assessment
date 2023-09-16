@@ -1,0 +1,105 @@
+const httpMocks = require('node-mocks-http');
+const { describe, it, expect, afterAll } = require('@jest/globals');
+const { HTTP400Error } = require('../exceptions/badRequest');
+const apiService = require('../services/apiService');
+const apiController = require('./apiController');
+
+// Mock the API service functions
+jest.mock('../services/apiService');
+
+const mockRegisterStudent = jest.spyOn(apiService, 'registerStudent');
+
+describe('API Controller - Register', () => {
+  it('should register students successfully', async () => {
+    // Mock request and response objects
+    const request = httpMocks.createRequest({
+      body: {
+        teacher: 'teacher@example.com',
+        students: ['student1@example.com', 'student2@example.com'],
+      },
+    });
+    const response = httpMocks.createResponse();
+
+    // Mock the behavior of the registerStudent function
+    mockRegisterStudent.mockResolvedValue();
+
+    // Call the controller function
+    await apiController.register(request, response);
+
+    // Assertions
+    expect(mockRegisterStudent).toHaveBeenCalledWith(request.body);
+    expect(response.statusCode).toBe(200);
+    expect(response._isEndCalled()).toBeTruthy();
+    expect(response._getJSONData()).toEqual({ message: 'Register successful' });
+  });
+
+  it('should handle missing teacher key', async () => {
+    // Mock request and response objects with missing teacher key
+    const request = httpMocks.createRequest({
+      body: {
+        students: ['student1@example.com', 'student2@example.com'],
+      },
+    });
+    const response = httpMocks.createResponse();
+
+    // Call the controller function
+    await apiController.register(request, response);
+
+    // Assertions
+    expect(mockRegisterStudent).not.toHaveBeenCalled();
+    expect(response.statusCode).toBe(400);
+    expect(response._isEndCalled()).toBeTruthy();
+    expect(response._getJSONData()).toEqual({
+      error: "One of the following keys is missing or is empty in request body: 'teacher'",
+    });
+  });
+
+  it('should handle missing students key', async () => {
+    // Mock request and response objects with missing students key
+    const request = httpMocks.createRequest({
+      body: {
+        teacher: 'teacher@example.com',
+      },
+    });
+    const response = httpMocks.createResponse();
+
+    // Call the controller function
+    await apiController.register(request, response);
+
+    // Assertions
+    expect(mockRegisterStudent).not.toHaveBeenCalled();
+    expect(response.statusCode).toBe(400);
+    expect(response._isEndCalled()).toBeTruthy();
+    expect(response._getJSONData()).toEqual({
+      error: "One of the following keys is missing or is empty in request body: 'students'",
+    });
+  });
+
+  it('should handle errors from the service', async () => {
+    // Mock request and response objects
+    const request = httpMocks.createRequest({
+      body: {
+        teacher: 'teacher@example.com',
+        students: ['student1@example.com', 'student2@example.com'],
+      },
+    });
+    const response = httpMocks.createResponse();
+
+    // Mock the behavior of the registerStudent function to throw an error
+    const errorMessage = 'Some error occurred';
+    mockRegisterStudent.mockRejectedValue(new HTTP400Error(errorMessage));
+
+    // Call the controller function
+    await apiController.register(request, response);
+
+    // Assertions
+    expect(mockRegisterStudent).toHaveBeenCalledWith(request.body);
+    expect(response.statusCode).toBe(400);
+    expect(response._isEndCalled()).toBeTruthy();
+    expect(response._getJSONData()).toEqual({ error: errorMessage });
+  });
+});
+
+afterAll(() => {
+  jest.clearAllMocks();
+});

@@ -1,0 +1,63 @@
+const controller = require('../controllers/apiController');
+const apiService = require('../services/apiService');
+
+// In your test file (e.g., controller.test.js)
+jest.mock('../services/apiService.js', () => ({
+    registerStudent: jest.fn(),
+    findCommonStudents: jest.fn(),
+    suspendStudent: jest.fn(),
+    retrieveRecipientsForNotifications: jest.fn(),
+  }));
+
+describe('API Controller', () => {
+  it('should register a student', async () => {
+    // Mock request and response objects
+    const req = {
+      body: {
+        teacher: 'teacher@example.com',
+        students: ['student@example.com'],
+      },
+    };
+    const res = {
+      status: jest.fn(),
+      send: jest.fn(),
+    };
+
+    // Mock the service function
+    apiService.registerStudent.mockResolvedValue();
+
+    // Call the controller function
+    await controller.register(req, res);
+
+    // Assertions
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith({ message: 'Register successful' });
+    // Add more assertions as needed
+  });
+  // Test case 2: Missing 'teacher' key in request body
+  it('should return a 400 status and error message if "teacher" key is missing in request body', async () => {
+    // Mock request and response objects
+    const req = {
+      body: {
+        students: ['student1@example.com', 'student2@example.com'],
+      },
+    };
+    const res = {
+      status: jest.fn(() => res),
+      send: jest.fn(),
+    };
+
+    // Call the 'register' API function
+    await controller.register(req, res);
+
+    // Assertions
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith({
+      status: 'FAILED',
+      data: {
+        error: "One of the following keys is missing or is empty in request body: 'teacher'",
+      },
+    });
+  });
+  // Add more test cases for other endpoints
+});
