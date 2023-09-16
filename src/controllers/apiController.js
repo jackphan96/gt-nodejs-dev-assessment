@@ -6,39 +6,53 @@ exports.register = async (req, res, next) => {
   try {
     // Handle empty list
     if (!req.body.teacher || req.body.teacher.length == 0) {
-      console.log('Missing teacher key');
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'teacher'");
     }
     // Handle empty list
     // Assumptions: API always receive student list
     if (!req.body.students || req.body.students.length == 0) {
-      console.log('Missing students key');
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'students'");
     }
+
+    // Check teacher email format
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const invalidTeacherEmails = !emailRegex.test(teacher);
+    if (invalidTeacherEmails){
+        throw new HTTP400Error(`Invalid teacher email format: ${teacher}`);
+    }
+
+    // Check student email format
+    const invalidEmails = req.body.students.filter(stu => !emailRegex.test(stu));
+    if (invalidEmails.length > 0){
+        throw new HTTP400Error(`Invalid student email format: ${invalidEmails}`);
+    }
+    
     // Call service
-    console.log('Before calling service.registerStudent');
     await service.registerStudent(req.body);
-    console.log('After calling service.registerStudent');
 
     res.status(204).send({ message: "Register successful" });
   } catch (error) {
-    console.error('Error caught:', error);
-    next(error); // Pass the error to the error-handling middleware
+    res.status(error?.statusCode || 500)
+    .send({message: error?.name || error });
   }
 };
 
 // API 2
 exports.commonStudents = async (req, res, next) => {
   try {
-    // Assign single value into list
-    const teacherEmails = Array.isArray(req.query.teacher)
-    ? req.query.teacher
-    : [req.query.teacher];
-
     // Ensure teacherEmails is not empty
-    if (!teacherEmails || teacherEmails.length === 0) {
+    if (!req.query.teacher || req.query.teacher.length === 0) {
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'teacher'")
+    }       
 
+    // Assign single value into list
+    const teacherEmails = Array.isArray(req.query.teacher)? req.query.teacher: [req.query.teacher];
+
+    // Check student email format
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const invalidEmails = teacherEmails.filter(email => !emailRegex.test(email));
+    if (invalidEmails.length > 0){
+      throw new HTTP400Error(`Invalid teacher email format: ${invalidEmails}`);
     }
 
     // Decode query parameters and replace %40 with @
@@ -52,7 +66,8 @@ exports.commonStudents = async (req, res, next) => {
     res.status(200).send({ students: commonStudents });
     
   } catch (error) {
-    next(error);
+    res.status(error?.statusCode || 500)
+    .send({message: error?.name || error });  
   }
 }
 
@@ -60,8 +75,15 @@ exports.commonStudents = async (req, res, next) => {
 exports.suspend = async (req, res, next) => {
   try {
     // check empty
-    if (!req.body.student) {
+    if (!req.body.student || req.body.student.length == 0) {
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'student'")
+    }
+
+    // Check email format
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const invalidEmails = !emailRegex.test(req.body.student);
+    if (invalidEmails){
+        throw new HTTP400Error(`Invalid student email format: ${req.body.student}`);
     }
 
     let studentEmail = req.body.student;
@@ -70,21 +92,35 @@ exports.suspend = async (req, res, next) => {
     res.status(204).send({message: `${studentEmail} suspended successfully`});
 
   } catch (error) {
-    next(error);
+    res.status(error?.statusCode || 500)
+    .send({message: error?.name || error });    
   }
 }
 
 // API 4
 exports.retrieveForNotifications = async (req, res, next) => {
   try {
-    if (!req.body.teacher){
+    //check if empty or missing key
+    if (!req.body.teacher || req.body.teacher == 0){
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'teacher'")
+    }
+
+    if (!req.body.notification){
+      throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'notification'")
+    }
+
+    // Check teacher email format
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const invalidTeacherEmails = !emailRegex.test(req.body.teacher);
+    if (invalidTeacherEmails){
+        throw new HTTP400Error(`Invalid teacher email format: ${teacher}`);
     }
 
     const studentsList = await service.retrieveRecipientsForNotifications(req.body);
 
-    res.status(200).send({receipients: studentsList});
+    res.status(200).send({recipients: studentsList});
   } catch (error) {
-    next(error);
+    res.status(error?.statusCode || 500)
+    .send({message: error?.name || error });
   }
 }

@@ -52,7 +52,7 @@ const registerStudent = async (body) => {
 }
 
 const findCommonStudents = async (teacherEmails) => {
-    try {
+    try {   
         let results = await relationshipTable.findCommonStudentsRelationship(teacherEmails);
         // Extract student emails from the query results
         const commonStudents = results.map((result) => result.student_email);

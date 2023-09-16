@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "test-specific": "jest -t retrievefornotifications",
     "start": "nodemon server.js"
   },
   "author": "",
