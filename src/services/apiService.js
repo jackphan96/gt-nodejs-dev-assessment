@@ -2,6 +2,8 @@ const teacherTable = require('../database/teacherTable.js');
 const studentTable = require('../database/studentTable.js');
 const relationshipTable = require('../database/relationshipTable.js');
 const HTTP400Error = require('../exceptions/badRequest.js')
+const HTTP404Error = require('../exceptions/notFound.js')
+const HTTP409Error = require('../exceptions/conflictError.js')
 const HTTP500Error = require('../exceptions/apiError.js')
 
 
@@ -12,23 +14,23 @@ const registerStudent = async (body) => {
         // Check if the teacher exists in the database
         const teacherExists = await teacherTable.checkTeacherExists(teacher);
         if (!teacherExists) {
-            throw new HTTP400Error(`Teacher ${teacher} does not exist`);
+            throw new HTTP404Error(`Teacher ${teacher} does not exist`);
         }
 
         // Check student email format
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
         const invalidEmails = students.filter(stu => !emailRegex.test(stu));
         if (invalidEmails.length > 0){
-            throw new HTTP400Error(`Invalid student email: ${invalidEmails}`);
+            throw new HTTP400Error(`Invalid student email format: ${invalidEmails}`);
         }
     
         // Check if relationship exist between any student before registering
         const registeredStudentFound = await relationshipTable.checkRelationshipExists(teacher, students);
         if (registeredStudentFound.length > 0) {
             let studentString = registeredStudentFound.map(obj => obj.student_email).join(', ');
-            throw new HTTP400Error(`Student already registered: ${studentString}`);
+            throw new HTTP409Error(`Student already registered: ${studentString}`);
         }
-    
+
         // Register students
         for (const studentEmail of students) {
 
@@ -76,7 +78,7 @@ const retrieveRecipientsForNotifications = async (body) => {
         // Check if the teacher exists in the database
         const teacherExists = await teacherTable.checkTeacherExists(teacher);
         if (!teacherExists) {
-            throw new HTTP400Error(`Teacher ${teacher} does not exist`);
+            throw new HTTP404Error(`Teacher ${teacher} does not exist`);
         }
 
         //Retrieve mentioned student
