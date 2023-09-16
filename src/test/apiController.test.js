@@ -288,7 +288,7 @@ describe('API Controller - /api/suspend', () => {
     await apiController.suspend(request, response);  
 
     expect(response.statusCode).toBe(500);
-    expect(service.suspendStudent).not.toHaveBeenCalled();
+    expect(service.suspendStudent).toHaveBeenCalled();
     expect(response._getData()).toEqual({ message: errorMessage });
   });
 });

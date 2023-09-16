@@ -16,7 +16,7 @@ exports.register = async (req, res, next) => {
 
     // Check teacher email format
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-    const invalidTeacherEmails = !emailRegex.test(teacher);
+    const invalidTeacherEmails = !emailRegex.test(req.body.teacher);
     if (invalidTeacherEmails){
         throw new HTTP400Error(`Invalid teacher email format: ${teacher}`);
     }
