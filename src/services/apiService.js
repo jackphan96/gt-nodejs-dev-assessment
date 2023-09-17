@@ -17,6 +17,8 @@ const registerStudent = async (body) => {
             throw new HTTP404Error(`Teacher ${teacher} does not exist`);
         }
 
+        // TODO: Check teacher email format
+
         // Check student email format
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
         const invalidEmails = students.filter(stu => !emailRegex.test(stu));
