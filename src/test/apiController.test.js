@@ -9,7 +9,7 @@ jest.mock('../services/apiService.js', () => ({
   registerStudent: jest.fn(),
   findCommonStudents: jest.fn(),
   suspendStudent: jest.fn(),
-  retrieveRecipientsForNotifications: jest.fn(),
+  retrieveRecipientsForNotifications: jest.fn()
 }));
 
 describe('API Controller - /api/register', () => {
@@ -32,8 +32,6 @@ describe('API Controller - /api/register', () => {
 
     // Call the controller function
     await apiController.register(request, response);
-
-    console.log(response._getData());
 
     // Assertions
     expect(service.registerStudent).toHaveBeenCalledWith(request.body);

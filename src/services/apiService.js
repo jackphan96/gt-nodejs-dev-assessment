@@ -94,7 +94,7 @@ const retrieveRecipientsForNotifications = async (body) => {
         }
 
         //Get receipients for notification
-        const studentsList = await studentTable.getReceipientFromDb(teacher, cleanedStudents);
+        const studentsList = await studentTable.getRecipientFromDb(teacher, cleanedStudents);
         const commonStudents = studentsList.map((result) => result.email);
         return commonStudents
 

@@ -10,7 +10,7 @@ const checkStudentExists = (studentEmail) => {
         return reject(new HTTP500Error("Query error"))
       }
       const count = results[0].count;
-      resolve(count > 0); 
+      resolve(count > 0);
     });
   });
 }
@@ -42,7 +42,7 @@ function suspendStudent(studentEmail){
   });
 }
 
-function getReceipientFromDb(teacher, cleanedStudents){
+function getRecipientFromDb(teacher, cleanedStudents){
   return new Promise((resolve, reject) => {
     let query;
     let queryParams = [teacher];
@@ -94,5 +94,5 @@ module.exports = {
     checkStudentExists,
     insertNewStudent,
     suspendStudent,
-    getReceipientFromDb
+    getRecipientFromDb
 };

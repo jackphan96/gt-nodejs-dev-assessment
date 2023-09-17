@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "test-specific": "jest -t retrievefornotifications",
+    "test-specific": "jest -t findCommonStudentsRelationship",
     "start": "nodemon server.js"
   },
   "author": "",
