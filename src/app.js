@@ -18,7 +18,7 @@ const errorHandler = (error, req, res, next) => {
     console.error(`errorHandler: An error occurred:${error}`);
     // Send an error response to the client
     res.status(error?.statusCode || 500)
-    .send({message: error?.name || error });
+    .send({Error: error?.name || error });
 };
 
 

@@ -1,9 +1,16 @@
 const service = require("../services/apiService.js");
 const HTTP400Error = require('../exceptions/badRequest.js')
+var url = require('url');
+const querystring = require('querystring');
 
 //API 1
 exports.register = async (req, res, next) => {
   try {
+    //Check Content-Type
+    if(!req.is('application/json')){
+      throw new HTTP400Error("Content-Type must be application/json");
+    }
+
     // Handle empty list
     if (!req.body.teacher || req.body.teacher.length == 0) {
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'teacher'");
@@ -33,7 +40,7 @@ exports.register = async (req, res, next) => {
     res.status(204).send({ message: "Register successful" });
   } catch (error) {
     res.status(error?.statusCode || 500)
-    .send({message: error?.name || error });
+    .send({Error: error?.name || error });
   }
 };
 
@@ -43,7 +50,7 @@ exports.commonStudents = async (req, res, next) => {
     // Ensure teacherEmails is not empty
     if (!req.query.teacher || req.query.teacher.length === 0) {
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'teacher'")
-    }       
+    }
 
     // Assign single value into list
     const teacherEmails = Array.isArray(req.query.teacher)? req.query.teacher: [req.query.teacher];
@@ -67,13 +74,17 @@ exports.commonStudents = async (req, res, next) => {
     
   } catch (error) {
     res.status(error?.statusCode || 500)
-    .send({message: error?.name || error });  
+    .send({Error: error?.name || error });  
   }
 }
 
 // API 3
 exports.suspend = async (req, res, next) => {
   try {
+    //Check Content-Type
+    if(!req.is('application/json')){
+      throw new HTTP400Error("Content-Type must be application/json");
+    }
     // check empty
     if (!req.body.student || req.body.student.length == 0) {
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'student'")
@@ -93,13 +104,18 @@ exports.suspend = async (req, res, next) => {
 
   } catch (error) {
     res.status(error?.statusCode || 500)
-    .send({message: error?.name || error });    
+    .send({Error: error?.name || error });    
   }
 }
 
 // API 4
 exports.retrieveForNotifications = async (req, res, next) => {
   try {
+    //Check Content-Type
+    if(!req.is('application/json')){
+      throw new HTTP400Error("Content-Type must be application/json");
+    }
+    
     //check if empty or missing key
     if (!req.body.teacher || req.body.teacher == 0){
       throw new HTTP400Error("One of the following keys is missing or is empty in request body: 'teacher'")
@@ -121,6 +137,6 @@ exports.retrieveForNotifications = async (req, res, next) => {
     res.status(200).send({recipients: studentsList});
   } catch (error) {
     res.status(error?.statusCode || 500)
-    .send({message: error?.name || error });
+    .send({Error: error?.name || error });
   }
 }

@@ -14,7 +14,7 @@ const registerStudent = async (body) => {
         // Check if the teacher exists in the database
         const teacherExists = await teacherTable.checkTeacherExists(teacher);
         if (!teacherExists) {
-            throw new HTTP404Error(`Teacher ${teacher} does not exist`);
+            throw new HTTP400Error(`Teacher ${teacher} does not exist`);
         }
 
         // TODO: Check teacher email format
@@ -30,7 +30,7 @@ const registerStudent = async (body) => {
         const registeredStudentFound = await relationshipTable.checkRelationshipExists(teacher, students);
         if (registeredStudentFound.length > 0) {
             let studentString = registeredStudentFound.map(obj => obj.student_email).join(', ');
-            throw new HTTP409Error(`Student already registered: ${studentString}`);
+            throw new HTTP400Error(`Student already registered: ${studentString}`);
         }
 
         // Register students
@@ -54,7 +54,17 @@ const registerStudent = async (body) => {
 }
 
 const findCommonStudents = async (teacherEmails) => {
-    try {   
+    try {
+        const teacherExistsObjList = await teacherTable.checkTeacherExistsAndReturnResult(teacherEmails);
+
+        const teacherExistList = teacherExistsObjList.map((result) => result.email);
+        const teacherNotExist = teacherEmails.filter(email => !teacherExistList.includes(email));
+
+        if (teacherNotExist.length > 0){
+            let teacherNotExistString = teacherNotExist.join(', ');
+            throw new HTTP400Error(`Teacher does not exist: ${teacherNotExistString}`);
+        }
+
         let results = await relationshipTable.findCommonStudentsRelationship(teacherEmails);
         // Extract student emails from the query results
         const commonStudents = results.map((result) => result.student_email);
@@ -80,7 +90,7 @@ const retrieveRecipientsForNotifications = async (body) => {
         // Check if the teacher exists in the database
         const teacherExists = await teacherTable.checkTeacherExists(teacher);
         if (!teacherExists) {
-            throw new HTTP404Error(`Teacher ${teacher} does not exist`);
+            throw new HTTP400Error(`Teacher ${teacher} does not exist`);
         }
 
         //Retrieve mentioned student

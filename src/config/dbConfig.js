@@ -4,6 +4,5 @@ module.exports = {
     HOST: "localhost",
     USER: "root",
     PASSWORD: process.env.DATABASE_PASSWORD,
-    DB: "teacher_student",
-    insecureAuth : true
+    DB: process.env.DATABASE_NAME,
 };
