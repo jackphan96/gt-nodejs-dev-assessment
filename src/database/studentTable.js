@@ -1,5 +1,6 @@
 const db = require("../models/db.js");
-const HTTP500Error = require("../exceptions/apiError.js")
+const httpStatusCodes = require('../exceptions/httpStatusCodes.js')
+const BaseError = require('../exceptions/baseError.js')
 
 // Function to check if a student exists
 const checkStudentExists = (studentEmail) => {
@@ -7,7 +8,7 @@ const checkStudentExists = (studentEmail) => {
     const query = 'SELECT COUNT(*) as count FROM student WHERE email = ?';
     db.query(query, [studentEmail], (error, results) => {
       if (error) {
-        return reject(new HTTP500Error("Query error"))
+        return reject(new BaseError("Internal Server Error", httpStatusCodes.INTERNAL_SERVER))
       }
       const count = results[0].count;
       resolve(count > 0);
@@ -21,7 +22,7 @@ function insertNewStudent(studentEmail) {
     const query = 'INSERT INTO student (email, is_suspended) VALUES (?, ?)';
     db.query(query, [studentEmail, 0], (error, results) => {
       if (error) {
-        return reject(new HTTP500Error("Query error"))
+        return reject(new BaseError("Internal Server Error", httpStatusCodes.INTERNAL_SERVER))
       }
       resolve(results.email);
     });
@@ -33,7 +34,7 @@ function suspendStudent(studentEmail){
     const query = 'UPDATE student SET is_suspended = 1 WHERE email = (?)';
     db.query(query, [studentEmail], (error, results) => {
       if (error) {
-        return reject(new HTTP500Error("Query error"))
+        return reject(new BaseError("Internal Server Error", httpStatusCodes.INTERNAL_SERVER))
       } else {
         resolve();
       }
@@ -47,9 +48,9 @@ function retrieveOneStudent(studentEmail){
     db.query(query, [studentEmail], (error, results) => {
       console.log(results);
       if (error) {
-        return reject(new HTTP500Error("Query error"))
+        return reject(new BaseError("Internal Server Error", httpStatusCodes.INTERNAL_SERVER))
       } else {
-        if(results.length == 0){
+        if(results.length === 0){
           resolve(-1);
         }
         resolve(results[0].is_suspended);
@@ -63,7 +64,7 @@ function getRecipientFromDb(teacher, cleanedStudents){
     let query;
     let queryParams = [teacher];
 
-    if (cleanedStudents.length == 0){
+    if (cleanedStudents.length === 0){
       query = `
         SELECT DISTINCT s.email
         FROM student s
@@ -97,7 +98,7 @@ function getRecipientFromDb(teacher, cleanedStudents){
 
     db.query(query, queryParams, (error, results) => {
       if (error) {
-        return reject(new HTTP500Error("Query error"))
+        return reject(new BaseError("Internal Server Error", httpStatusCodes.INTERNAL_SERVER))
       }else {
         resolve(results);
       }

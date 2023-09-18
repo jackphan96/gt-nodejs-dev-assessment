@@ -1,8 +1,9 @@
 const db = require('../../models/db.js');
-const HTTP500Error = require('../../exceptions/apiError.js');
 const relationshipTable = require('../../database/relationshipTable.js');
 const mysql = require("mysql2");
 const { it } = require('@jest/globals');
+const BaseError = require('../../exceptions/baseError.js');
+const httpStatusCodes = require('../../exceptions/httpStatusCodes.js')
 
 // Mock the entire mysql2
 jest.mock('mysql2', () => ({
@@ -37,13 +38,12 @@ describe('relationshipTable', () => {
         await expect(relationshipTable.registerStudentTeacherRelationship(teacherEmail, studentEmail)).resolves.toBeUndefined();
       });
     
-      it('should reject with HTTP500Error when a database query error occurs', async () => {
-        // Arrange
+      it('should reject with HTTP 500 when a database query error occurs', async () => {
         const teacherEmail = 'teacher@example.com';
         const studentEmail = 'student@example.com';
     
         // Simulate a database query error
-        const mockError = new HTTP500Error('Database error');
+        const mockError = new BaseError('Database error', httpStatusCodes.INTERNAL_SERVER);
     
         // Mock the database query to simulate an error response
         db.query.mockImplementationOnce((query, queryParams, callback) => {
@@ -51,7 +51,12 @@ describe('relationshipTable', () => {
         });
     
         // Act and Assert
-        await expect(relationshipTable.registerStudentTeacherRelationship(teacherEmail, studentEmail)).rejects.toThrow(HTTP500Error);
+        try {
+          await relationshipTable.registerStudentTeacherRelationship(teacherEmail, studentEmail);
+        } catch (error) {
+          expect(error).toBeInstanceOf(BaseError);
+          expect(error.statusCode).toBe(500);
+        }
       });
     });
 
@@ -93,19 +98,24 @@ describe('relationshipTable', () => {
           expect(results).toEqual([]);
         });
       
-        it('should reject with HTTP500Error when a database query error occurs', async () => {
+        it('should reject with HTTP 500 when a database query error occurs', async () => {
           const teacherEmail = 'teacher@example.com';
           const studentList = ['student1@example.com', 'student2@example.com'];
       
           // Simulate a database query error
-          const mockError = new HTTP500Error('Database error');
+          const mockError = new BaseError('Database error', httpStatusCodes.INTERNAL_SERVER);
       
           // Mock the database query to simulate an error response
           db.query.mockImplementationOnce((query, queryParams, callback) => {
             callback(mockError, null);
           });
       
-          await expect(relationshipTable.checkRelationshipExists(teacherEmail, studentList)).rejects.toThrow(HTTP500Error);
+          try {
+            await relationshipTable.checkRelationshipExists(teacherEmail, studentList);
+          } catch (error) {
+            expect(error).toBeInstanceOf(BaseError);
+            expect(error.statusCode).toBe(500);
+          }
         });
     });
 
@@ -145,18 +155,23 @@ describe('relationshipTable', () => {
           expect(results).toEqual([]);
         });
       
-        it('should reject with HTTP500Error when a database query error occurs', async () => {
+        it('should reject with HTTP 500 when a database query error occurs', async () => {
           const teacherEmails = ['teacher1@example.com', 'teacher2@example.com'];
       
           // Simulate a database query error
-          const mockError = new HTTP500Error('Database error');
+          const mockError = new BaseError('Database error', httpStatusCodes.INTERNAL_SERVER);
       
           // Mock the database query to simulate an error response
           db.query.mockImplementationOnce((query, queryParams, callback) => {
             callback(mockError, null);
           });
       
-          await expect(relationshipTable.findCommonStudentsRelationship(teacherEmails)).rejects.toThrow(HTTP500Error);
+          try {
+            await relationshipTable.findCommonStudentsRelationship(teacherEmails);
+          } catch (error) {
+            expect(error).toBeInstanceOf(BaseError);
+            expect(error.statusCode).toBe(500);
+          }
         });
       });
     

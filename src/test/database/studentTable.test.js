@@ -1,8 +1,9 @@
 const db = require('../../models/db.js');
-const HTTP500Error = require('../../exceptions/apiError.js');
 const studentTable = require('../../database/studentTable.js');
 const mysql = require("mysql2");
-const { describe } = require('@jest/globals');
+const { describe, expect } = require('@jest/globals');
+const BaseError = require('../../exceptions/baseError.js');
+const httpStatusCodes = require('../../exceptions/httpStatusCodes.js')
 
 // Mock the entire mysql2
 jest.mock('mysql2', () => ({
@@ -40,7 +41,7 @@ describe('studentTable', () => {
         it('should resolve to false when student does not exist', async () => {
             // Mock a query result where student does not exist
             db.query.mockImplementation((query, values, callback) => {
-            callback(null, [{ count: 0 }]);
+                callback(null, [{ count: 0 }]);
             });
 
             const studentEmail = 'nonexistent@example.com';
@@ -50,19 +51,20 @@ describe('studentTable', () => {
             expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail], expect.any(Function));
         });
 
-        it('should throw HTTP500Error on query error', async () => {
+        it('should throw HTTP 500 on query error', async () => {
             // Mock a query error
             db.query.mockImplementation((query, values, callback) => {
-            callback(new HTTP500Error('Query error'), null);
+                callback(new BaseError('Internal Server Error', httpStatusCodes.INTERNAL_SERVER), null);
             });
 
             const studentEmail = 'studenttest@gmail.com';
 
             try {
-            await studentTable.checkStudentExists(studentEmail);
+                await studentTable.checkStudentExists(studentEmail);
             } catch (error) {
-            expect(error).toBeInstanceOf(HTTP500Error);
-            expect(error.name).toBe('Query error');
+                expect(error).toBeInstanceOf(BaseError);
+                expect(error.statusCode).toBe(500);
+                expect(error.name).toBe('Internal Server Error');
             }
 
             expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail], expect.any(Function));
@@ -72,41 +74,41 @@ describe('studentTable', () => {
     describe('insertNewStudent', () => {
         afterEach(() => {
         // Reset the mock and clear mock calls after each test
-        jest.clearAllMocks();
+            jest.clearAllMocks();
         });
     
         it('should resolve with the student email when the insertion is successful', async () => {
-        const studentEmail = 'test@example.com';
-    
-        // Mock the database query to simulate a successful insertion
-        db.query.mockImplementationOnce((query, values, callback) => {
-            callback(null, { email: studentEmail }); // Simulate a successful query
-        });
+            const studentEmail = 'test@example.com';
+        
+            // Mock the database query to simulate a successful insertion
+            db.query.mockImplementationOnce((query, values, callback) => {
+                callback(null, { email: studentEmail }); // Simulate a successful query
+            });
 
-        const email = await studentTable.insertNewStudent(studentEmail);
-        expect(email).toEqual(email);
-        expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail, 0], expect.any(Function));
+            const email = await studentTable.insertNewStudent(studentEmail);
+            expect(email).toEqual(email);
+            expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail, 0], expect.any(Function));
         });
     
-        it('should reject with HTTP500Error when a database query error occurs', async () => {
-        // Arrange
-        const studentEmail = 'test@example.com';
-        const mockError = new HTTP500Error('Database error'); // Simulate a database query error
-    
-        // Mock the database query to simulate an error response
-        db.query.mockImplementationOnce((query, values, callback) => {
-            callback(mockError, null);
-        });
+        it('should reject with HTTP 500 when a database query error occurs', async () => {
+            const studentEmail = 'test@example.com';
+            const mockError = new BaseError('Internal Server Error', httpStatusCodes.INTERNAL_SERVER);
+        
+            // Mock the database query to simulate an error response
+            db.query.mockImplementationOnce((query, values, callback) => {
+                callback(mockError, null);
+            });
 
-        try {
-            await studentTable.insertNewStudent(studentEmail);
-        } catch (error) {
-            expect(error).toBeInstanceOf(HTTP500Error);
-            expect(error.name).toBe('Query error');
-        }
-    
-        // Act and Assert
-        expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail, 0], expect.any(Function));
+            try {
+                await studentTable.insertNewStudent(studentEmail);
+            } catch (error) {
+                expect(error).toBeInstanceOf(BaseError);
+                expect(error.statusCode).toBe(500);
+                expect(error.name).toBe('Internal Server Error');
+            }
+        
+            // Act and Assert
+            expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail, 0], expect.any(Function));
         });
     });
 
@@ -130,17 +132,22 @@ describe('studentTable', () => {
             expect(db.query).toHaveBeenCalledWith(expect.any(String), [studentEmail], expect.any(Function));
         });
 
-        it('should reject with HTTP500Error when a database query error occurs', async () => {
+        it('should reject with HTTP 500 when a database query error occurs', async () => {
             const studentEmail = 'test@example.com';
-            const mockError = new HTTP500Error('Database error'); // Simulate a database query error
+            const mockError = new BaseError('Internal Server Error', httpStatusCodes.INTERNAL_SERVER);
         
             // Mock the database query to simulate an error response
             db.query.mockImplementationOnce((query, values, callback) => {
             callback(mockError, null);
             });
         
-            // Act and Assert
-            await expect(studentTable.suspendStudent(studentEmail)).rejects.toThrow(HTTP500Error);
+            try {
+                await studentTable.suspendStudent(studentEmail);
+            } catch (error) {
+                expect(error).toBeInstanceOf(BaseError);
+                expect(error.statusCode).toBe(500);
+                expect(error.name).toBe('Internal Server Error');
+            }
         });
     })
 
@@ -156,18 +163,18 @@ describe('studentTable', () => {
 
             // Mock the database query to simulate a successful query result
             db.query.mockImplementationOnce((query, queryParams, callback) => {
-            // Assert that the query and parameters are correct
-            expect(queryParams).toEqual([teacher]);
-            // Simulate a successful query result
-            callback(null, [{ email: 'recipient1@example.com' }, { email: 'recipient2@example.com' }]);
+                // Assert that the query and parameters are correct
+                expect(queryParams).toEqual([teacher]);
+                // Simulate a successful query result
+                callback(null, [{ email: 'recipient1@example.com' }, { email: 'recipient2@example.com' }]);
             });
 
             const studentsList = await studentTable.getRecipientFromDb(teacher, cleanedStudents)
             const commonStudents = studentsList.map((result) => result.email);
 
             expect(commonStudents).toEqual([
-            'recipient1@example.com',
-            'recipient2@example.com'
+                'recipient1@example.com',
+                'recipient2@example.com'
             ]);
         });
 
@@ -177,41 +184,47 @@ describe('studentTable', () => {
 
             // Mock the database query to simulate a successful query result
             db.query.mockImplementationOnce((query, queryParams, callback) => {
-            // Assert that the query and parameters are correct
-            expect(queryParams).toEqual([cleanedStudents, teacher]);
+                // Assert that the query and parameters are correct
+                expect(queryParams).toEqual([cleanedStudents, teacher]);
 
-            // Simulate a successful query result
-            callback(null, 
-                [
-                    { email: 'recipient1@example.com' }, 
-                    { email: 'recipient2@example.com' }, 
-                    { email: 'recipient3@example.com' }
-                ]);
+                // Simulate a successful query result
+                callback(null, 
+                    [
+                        { email: 'recipient1@example.com' }, 
+                        { email: 'recipient2@example.com' }, 
+                        { email: 'recipient3@example.com' }
+                    ]);
             });
 
             const studentsList = await studentTable.getRecipientFromDb(teacher, cleanedStudents)
             const commonStudents = studentsList.map((result) => result.email);
 
             expect(commonStudents).toEqual([
-            'recipient1@example.com',
-            'recipient2@example.com',
-            'recipient3@example.com',
+                'recipient1@example.com',
+                'recipient2@example.com',
+                'recipient3@example.com',
             ]);
         });
 
-        it('should reject with HTTP500Error when a database query error occurs', async () => {
+        it('should reject with HTTP 500 when a database query error occurs', async () => {
             const teacher = 'teacher@example.com';
             const cleanedStudents = [];
 
             // Simulate a database query error
-            const mockError = new HTTP500Error('Database error');
+            const mockError = new BaseError('Internal Server Error', httpStatusCodes.INTERNAL_SERVER);
 
             // Mock the database query to simulate an error response
             db.query.mockImplementationOnce((query, queryParams, callback) => {
-            callback(mockError, null);
+                callback(mockError, null);
             });
 
-            await expect(studentTable.getRecipientFromDb(teacher, cleanedStudents)).rejects.toThrow(HTTP500Error);
+            try {
+                await studentTable.getRecipientFromDb(teacher, cleanedStudents);
+            } catch (error) {
+                expect(error).toBeInstanceOf(BaseError);
+                expect(error.statusCode).toBe(500);
+                expect(error.name).toBe('Internal Server Error');
+            }
         });
     });
 });

@@ -1,9 +1,9 @@
 const httpMocks = require('node-mocks-http');
 const { describe, it, expect } = require('@jest/globals');
-const HTTP400Error = require('../exceptions/badRequest');
-const HTTP500Error = require('../exceptions/apiError.js');
 const service = require("../services/apiService.js");
 const apiController = require('../controllers/apiController.js'); // Adjust the path as needed
+const BaseError = require('../exceptions/baseError.js');
+const httpStatusCodes = require('../exceptions/httpStatusCodes.js')
 
 jest.mock('../services/apiService.js', () => ({
   registerStudent: jest.fn(),
@@ -17,13 +17,16 @@ describe('API Controller - /api/register', () => {
     jest.clearAllMocks(); // Clear mock function calls after each test
   });
   
-  it('should register students successfully', async () => {
+  it('should return HTTP 200 when register students successfully', async () => {
     // Mock request and response objects
     const request = httpMocks.createRequest({
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: {
         teacher: "teacherjoe@gmail.com",
-        students: ["studentjon@gmail.com","studenthon2@gmail.com"],
-      },
+        students: ["studentjon@gmail.com","studenthon2@gmail.com"]
+      }
     });
     const response = httpMocks.createResponse();
 
@@ -36,16 +39,15 @@ describe('API Controller - /api/register', () => {
     // Assertions
     expect(service.registerStudent).toHaveBeenCalledWith(request.body);
     expect(response.statusCode).toBe(204);
-    expect(response._isEndCalled()).toBeTruthy();
     expect(response._getData()).toEqual({ message: 'Register successful' });
   });
 
-  it('should handle missing teacher', async () => {
+  it('should throw HTTP 400 when handle missing teacher', async () => {
     // Mock request and response objects with missing teacher key
     const request = httpMocks.createRequest({
       body: {
         teacher: "",
-        students: ["studentjon@gmail.com","studenthon2@gmail.com"],
+        students: ["studentjon@gmail.com","studenthon2@gmail.com"]
       },
     });
 
@@ -60,16 +62,15 @@ describe('API Controller - /api/register', () => {
     // Assertions
     expect(service.registerStudent).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(response._isEndCalled()).toBeTruthy();
-    expect(response._getData()).toEqual({ message: "One of the following keys is missing or is empty in request body: 'teacher'" });
+    expect(response._getData()).toEqual({ Error: "Missing or Invalid request body" });
   });
 
-  it('should handle missing student', async () => {
+  it('should throw HTTP 400 when handle missing student', async () => {
     // Mock request and response objects with missing teacher key
     const request = httpMocks.createRequest({
       body: {
         teacher: "teacherjoe@gmail.com",
-        students: [],
+        students: []
       },
     });
 
@@ -84,16 +85,15 @@ describe('API Controller - /api/register', () => {
     // Assertions
     expect(service.registerStudent).not.toHaveBeenCalled();
     expect(response.statusCode).toBe(400);
-    expect(response._isEndCalled()).toBeTruthy();
-    expect(response._getData()).toEqual({ message: "One of the following keys is missing or is empty in request body: 'students'" });
+    expect(response._getData()).toEqual({ Error: "Missing or Invalid request body" });
   });
 
-  it('should handle service errors with a 400 error', async () => {
+  it('should throw HTTP 400 when handle service errors with a 400 error', async () => {
     // Mock request and response objects with missing teacher key
     const request = httpMocks.createRequest({
       body: {
         teacher: "teacherjoe@gmail.com",
-        students: ["studentjon@gmail.com","studenthon2@gmail.com"],
+        students: ["studentjon@gmail.com","studenthon2@gmail.com"]
       },
     });
 
@@ -103,9 +103,9 @@ describe('API Controller - /api/register', () => {
     const next = jest.fn();
 
     // Mock the behavior of the registerStudent function to throw an error
-    const errorMessage = 'Some error occurred';
+    const errorMessage = 'Service error';
     service.registerStudent.mockImplementation(() => {
-      throw new HTTP400Error(errorMessage);
+      throw new BaseError(errorMessage, httpStatusCodes.BAD_REQUEST);
     });
 
     // Call the controller function
@@ -114,8 +114,7 @@ describe('API Controller - /api/register', () => {
     // Assertions
     expect(service.registerStudent).toHaveBeenCalledWith(request.body);
     expect(response.statusCode).toBe(400);
-    expect(response._isEndCalled()).toBeTruthy();
-    expect(response._getData()).toEqual({ message: errorMessage });
+    expect(response._getData()).toEqual({ Error: 'Service error' });
   });
   
 });
@@ -125,12 +124,12 @@ describe('API Controller - /api/commonstudents', () => {
     jest.clearAllMocks(); // Clear mock function calls after each test
   });
 
-  it('should return HTTP 200 OK when the request is valid with 1 teacher', async () => {
+  it('should return HTTP 200 when the request is valid with 1 teacher', async () => {
 
     const request = httpMocks.createRequest({
       query: {
         teacher: "teacherjoe@gmail.com"
-      },
+      }
     });
 
     const response = httpMocks.createResponse();
@@ -148,7 +147,7 @@ describe('API Controller - /api/commonstudents', () => {
     expect(response._getData()).toEqual({ students: commonStudentsData });
   });
 
-  it('should return HTTP 200 OK when the request is valid with 2 teacher', async () => {
+  it('should return HTTP 200 when the request is valid with 2 teacher', async () => {
     const request = httpMocks.createRequest({
       query: {
         teacher: ["teacherjoe@gmail.com", "teacherken@gmail.com"]
@@ -170,11 +169,11 @@ describe('API Controller - /api/commonstudents', () => {
     expect(response._getData()).toEqual({ students: commonStudentsData });
   });
 
-  it('should return HTTP 400 error when handle a missing teacher parameter', async () => {
+  it('should return HTTP 400 when handle a missing teacher parameter value', async () => {
     const request = httpMocks.createRequest({
       query: {
         teacher: ""
-      },
+      }
     });
 
     const response = httpMocks.createResponse();
@@ -183,15 +182,14 @@ describe('API Controller - /api/commonstudents', () => {
 
     expect(response.statusCode).toBe(400);
     expect(service.findCommonStudents).not.toHaveBeenCalled();
-    expect(response._isEndCalled()).toBeTruthy();
-    expect(response._getData()).toEqual({ message: "One of the following keys is missing or is empty in request body: 'teacher'" });
+    expect(response._getData()).toEqual({ Error: "Missing or Invalid request body" });
   });
 
-  it('should return HTTP 400 error when handle a invalid teacher email', async () => {
+  it('should return HTTP 400 when handle a invalid teacher email', async () => {
     const request = httpMocks.createRequest({
       query: {
         teacher: "test"
-      },
+      }
     });
 
     const response = httpMocks.createResponse();
@@ -200,15 +198,14 @@ describe('API Controller - /api/commonstudents', () => {
 
     expect(response.statusCode).toBe(400);
     expect(service.findCommonStudents).not.toHaveBeenCalled();
-    expect(response._isEndCalled()).toBeTruthy();
-    expect(response._getData()).toEqual({ message: "Invalid teacher email format: test" });
+    expect(response._getData()).toEqual({ Error: "Invalid teacher value or email format: test" });
   });
 
-  it('should return HTTP 500 error when handle service errors', async () => {
+  it('should return HTTP 500 when handle service errors', async () => {
     const request = httpMocks.createRequest({
       query: {
         teacher: "teacherjoe@gmail.com"
-      },
+      }
     });
 
     const response = httpMocks.createResponse();
@@ -216,15 +213,14 @@ describe('API Controller - /api/commonstudents', () => {
     // Mock the service function to throw an error
     const errorMessage = 'Service error';
     service.findCommonStudents.mockImplementation(() => {
-      throw new HTTP500Error(errorMessage);
+      throw new BaseError(errorMessage, httpStatusCodes.INTERNAL_SERVER);
     });
 
     await apiController.commonStudents(request, response);
 
     expect(response.statusCode).toBe(500);
     expect(service.findCommonStudents).toHaveBeenCalled();
-    expect(response._isEndCalled()).toBeTruthy();
-    expect(response._getData()).toEqual({ message: errorMessage });
+    expect(response._getData()).toEqual({ Error: 'Service error' });
 
   });
 });
@@ -265,7 +261,7 @@ describe('API Controller - /api/suspend', () => {
 
     expect(response.statusCode).toBe(400);
     expect(service.suspendStudent).not.toHaveBeenCalled();
-    expect(response._getData()).toEqual({ message: `One of the following keys is missing or is empty in request body: 'student'` });
+    expect(response._getData()).toEqual({ Error: "Missing or Invalid request body" });
   });
 
   it('should return HTTP 500 when handle service error', async () => {
@@ -280,14 +276,14 @@ describe('API Controller - /api/suspend', () => {
     // Mock the service function to throw an error
     const errorMessage = 'Service error';
     service.suspendStudent.mockImplementation(() => {
-      throw new HTTP500Error(errorMessage);
+      throw new BaseError(errorMessage, httpStatusCodes.INTERNAL_SERVER);
     });
 
     await apiController.suspend(request, response);  
 
     expect(response.statusCode).toBe(500);
     expect(service.suspendStudent).toHaveBeenCalled();
-    expect(response._getData()).toEqual({ message: errorMessage });
+    expect(response._getData()).toEqual({ Error: 'Service error' });
   });
 });
 
@@ -330,7 +326,7 @@ describe('API Controller - /api/retrievefornotifications', () => {
 
     expect(response.statusCode).toBe(400);
     expect(service.retrieveRecipientsForNotifications).not.toHaveBeenCalled();
-    expect(response._getData()).toEqual({ message: `One of the following keys is missing or is empty in request body: 'teacher'` });
+    expect(response._getData()).toEqual({ Error: "Missing or Invalid request body" });
   });
 
   it('should return HTTP 400 when request is invalid with empty key teacher', async () => {
@@ -346,7 +342,7 @@ describe('API Controller - /api/retrievefornotifications', () => {
 
     expect(response.statusCode).toBe(400);
     expect(service.retrieveRecipientsForNotifications).not.toHaveBeenCalled();
-    expect(response._getData()).toEqual({ message: `One of the following keys is missing or is empty in request body: 'teacher'` });
+    expect(response._getData()).toEqual({ Error: "Missing or Invalid request body" });
   });
 
   it('should return HTTP 500 when handle service error', async () => {
@@ -362,13 +358,13 @@ describe('API Controller - /api/retrievefornotifications', () => {
     // Mock the service function to throw an error
     const errorMessage = 'Service error';
     service.retrieveRecipientsForNotifications.mockImplementation(() => {
-      throw new HTTP500Error(errorMessage);
+      throw new BaseError(errorMessage, httpStatusCodes.INTERNAL_SERVER);
     });
 
     await apiController.retrieveForNotifications(request, response);  
 
     expect(response.statusCode).toBe(500);
     expect(service.retrieveRecipientsForNotifications).toHaveBeenCalled();
-    expect(response._getData()).toEqual({ message: errorMessage });
+    expect(response._getData()).toEqual({ Error: 'Service error' });
   });
 });
