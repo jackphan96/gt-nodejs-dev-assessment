@@ -16,15 +16,6 @@ const registerStudent = async (body) => {
         if (!teacherExists) {
             throw new HTTP400Error(`Teacher ${teacher} does not exist`);
         }
-
-        // TODO: Check teacher email format
-
-        // Check student email format
-        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-        const invalidEmails = students.filter(stu => !emailRegex.test(stu));
-        if (invalidEmails.length > 0){
-            throw new HTTP400Error(`Invalid student email format: ${invalidEmails}`);
-        }
     
         // Check if relationship exist between any student before registering
         const registeredStudentFound = await relationshipTable.checkRelationshipExists(teacher, students);
@@ -77,6 +68,14 @@ const findCommonStudents = async (teacherEmails) => {
 
 const suspendStudent = async (studentEmail) => {
     try {
+
+        const isSuspendedStatus = await studentTable.retrieveOneStudent(studentEmail);
+        if(isSuspendedStatus == -1){
+            throw new HTTP400Error(`Student does not exist ${studentEmail}`);
+        } else if (isSuspendedStatus == 1) {
+            throw new HTTP400Error(`Student is already suspended ${studentEmail}`);
+        }
+
         await studentTable.suspendStudent(studentEmail);
     } catch (error) {
         throw error;

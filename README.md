@@ -5,7 +5,7 @@
 - Student email need to be in valid format: Example: zxc@gmail.com
 - Student registered cannot be registered again
 - Non existing student will be added and registered
-
+- API always receive student in list format
 ### Validations
 
 

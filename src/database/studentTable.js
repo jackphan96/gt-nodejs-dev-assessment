@@ -31,12 +31,28 @@ function insertNewStudent(studentEmail) {
 function suspendStudent(studentEmail){
   return new Promise((resolve, reject) => {
     const query = 'UPDATE student SET is_suspended = 1 WHERE email = (?)';
-
     db.query(query, [studentEmail], (error, results) => {
       if (error) {
         return reject(new HTTP500Error("Query error"))
       } else {
         resolve();
+      }
+    });
+  });
+}
+
+function retrieveOneStudent(studentEmail){
+  return new Promise((resolve, reject) => {
+    const query = 'SELECT is_suspended FROM student WHERE email = (?)';
+    db.query(query, [studentEmail], (error, results) => {
+      console.log(results);
+      if (error) {
+        return reject(new HTTP500Error("Query error"))
+      } else {
+        if(results.length == 0){
+          resolve(-1);
+        }
+        resolve(results[0].is_suspended);
       }
     });
   });
@@ -94,5 +110,6 @@ module.exports = {
     checkStudentExists,
     insertNewStudent,
     suspendStudent,
-    getRecipientFromDb
+    getRecipientFromDb,
+    retrieveOneStudent
 };

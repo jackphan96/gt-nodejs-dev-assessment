@@ -1,6 +1,10 @@
 const express = require("express");
 const app = express ();
+const cors = require('cors')
+
 app.use(express.json());
+app.use(cors())
+
 
 /* ROUTES */
 app.use('/',  require('./routes/health'));
@@ -9,7 +13,8 @@ app.use('/api', require('./routes/apiRoute'));
 
 // Error handling Middleware - Error message logger
 const errorLogger = (error, request, response, next) => {
-    console.log( `Error logger: ${error.message}`) 
+    console.log( `Error logger: ${error.message}`)
+    console.log(error);
     next(error) // calling next middleware
 };
 
