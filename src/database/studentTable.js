@@ -46,7 +46,6 @@ function retrieveOneStudent(studentEmail){
   return new Promise((resolve, reject) => {
     const query = 'SELECT is_suspended FROM student WHERE email = (?)';
     db.query(query, [studentEmail], (error, results) => {
-      console.log(results);
       if (error) {
         return reject(new BaseError("Internal Server Error", httpStatusCodes.INTERNAL_SERVER))
       } else {
