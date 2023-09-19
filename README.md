@@ -117,9 +117,9 @@ npm run test
 - Value(s) cannot be empty
 
 ## Architecture Diagram
-![AWS-Architecture-diagram](./Diagrams/AWS-diagram.png)
+![AWS-Architecture-diagram](./Diagrams/AWS-Diagram.png)
 
 
 ## ER Diagram
-![ER-diagram](./Diagrams/er-diagram.png)
+![ER-diagram](./Diagrams/ER-diagram.png)
 
